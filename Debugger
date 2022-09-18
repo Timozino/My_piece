@@ -1,0 +1,76 @@
+from functools import wraps
+
+
+class Debugger(object):
+    attribute_accesses = []
+    method_calls = []
+
+
+class Meta(type):
+    def __new__(cls, *args, **kwargs):
+        obj = super().__new__(cls, *args, **kwargs)
+        for k, v in vars(obj).items():
+            if callable(v):
+                def mk_wrapper(k, function):
+                    @wraps(function)
+                    def dbg_hook(self, *args, **kwargs):
+                        Debugger.method_calls.append({
+                            'class': self,
+                            'args': (self, *args),
+                            'kwargs': kwargs,
+                            'method': k
+                        })
+                        if k != '__init__':
+                            Debugger.attribute_accesses.append({
+                                'action': 'get',
+                                'class': self,
+                                'attribute': k,
+                                'value': function
+                            })
+                        else:
+                            self.__dict__['__mydict__'] = {}
+                        return function(self, *args, **kwargs)
+                    return dbg_hook
+                setattr(obj, k, mk_wrapper(k, v))
+
+        def swrap(self, name, val):
+            if name == '__mydict__':
+                self.__dict__[name] = val
+                return
+            Debugger.attribute_accesses.append({
+                'action': 'set',
+                'class': self,
+                'attribute': name,
+                'value': val
+            })
+            self.__mydict__[name] = val
+
+        def gwrap(self, name):
+            if name == '__mydict__':
+                return self.__dict__[name]
+            Debugger.attribute_accesses.append({
+                'action': 'get',
+                'class': self,
+                'attribute': name,
+                'value': self.__mydict__[name]
+            })
+            return self.__mydict__[name]
+
+        setattr(obj, '__setattr__', swrap)
+        setattr(obj, '__getattr__', gwrap)
+
+        return obj
+
+
+class Foo(object, metaclass=Meta):
+    def __init__(self, x):
+        self.x = x
+
+    def bar(self, v):
+        return (self.x, v)
+
+
+if __name__ == '__main__':
+    f = Foo(1)
+    print(f.bar(2))
+    print(Debugger.method_calls)

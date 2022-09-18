@@ -1,0 +1,18 @@
+def fib(n):
+      if n<0: return int(pow(-1, (n&1)+1))*fib(-n)
+      if n == 0: return 0
+      if n==1 or n==2: return 1
+      if n==3: return 2
+      
+      # n is multiple of 3
+      if n%3 == 0:
+            third = n//3
+            fibthird = fib(third)
+            return 5*pow(fibthird,3) + 3*pow(-1, third)*fibthird
+            
+      # even n
+      if n&1==0:
+            return pow(fib((n>>1) + 1),2) - pow(fib((n>>1) - 1), 2)
+
+      # for odd n
+      return ( pow(fib((n>>1)+1),2) + pow(fib(n>>1),2) )

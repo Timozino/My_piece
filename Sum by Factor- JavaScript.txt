@@ -1,0 +1,32 @@
+function sumOfDivided(lst) {
+  var commonArr = [];
+  var pfsArr = [];
+
+  for(i in lst) {
+    var num = lst[i];
+    var pfArr = [];
+    var pf = 2;
+
+    function recur(n) {
+      if(n%pf==0) {
+        if(pfArr.indexOf(pf)<0) pfArr.push(pf);
+        if(commonArr.indexOf(pf)<0) commonArr.push(pf);
+        n = n/pf;
+        pf=2;
+      } else pf++;
+      if(pf>Math.abs(n))return;
+      recur(n);
+    }
+
+    recur(num);
+    pfsArr.push(pfArr);
+  }
+
+  return commonArr.sort(function(a,b){return a-b;}).map(function(cPf){
+    var sum = 0;
+    pfsArr.forEach(function(pPf, pIdx){
+      if(pPf.indexOf(cPf)>=0) sum+=lst[pIdx];
+    });
+    return [cPf, sum];
+  });
+}
